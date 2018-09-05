@@ -189,7 +189,7 @@ class TestWrapper(wrapper.EWrapper):
 
 
 class TAA_struct(object):
-    def __init__(self, VOO, VOOp, QQQ, QQQp, EFA, EFAp, EEM, EEMp, EWJ, EWJp, IEF, IEFp, HYG, HYGp, GLD, GLDp, TLT, TLTp, VNQ, VNQp, VEU, VEUp, BND, BNDp, trading):
+    def __init__(self, VOO, VOOp, QQQ, QQQp, EFA, EFAp, EEM, EEMp, EWJ, EWJp, IEF, IEFp, HYG, HYGp, GLD, GLDp, TLT, TLTp, VNQ, VNQp, VEU, VEUp, BND, BNDp, SCZ, SCZp, DBC, DBCp, trading):
         self.VOO = VOO
         self.VOOp = VOOp
         self.QQQ = QQQ
@@ -214,6 +214,10 @@ class TAA_struct(object):
         self.VEUp = VEUp
         self.BND = BND
         self.BNDp = BNDp
+        self.SCZ = SCZ
+        self.SCZp = SCZp
+        self.DBC = DBC
+        self.DBCp = DBCp
         self.trading = trading
 
 # Dick Stoken’s Active Combined Asset (ACA)
@@ -237,7 +241,7 @@ class TestApp(TestWrapper, TestClient):
         self.globalCancelOnly = False
         self.simplePlaceOid = None
         self.TAA = TAA_struct(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-                              0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
+                              0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
 
     def dumpTestCoverageSituation(self):
         for clntMeth in sorted(self.clntMeth2callCount.keys()):
@@ -420,6 +424,10 @@ class TestApp(TestWrapper, TestClient):
             self.TAA.VEU = position
         if(contract.symbol == "BND"):
             self.TAA.BND = position
+        if(contract.symbol == "SCZ"):
+            self.TAA.SCZ = position
+        if(contract.symbol == "DBC"):
+            self.TAA.DBC = position
     # ! [updateportfolio]
 
     @iswrapper
@@ -499,6 +507,10 @@ class TestApp(TestWrapper, TestClient):
                         "", False, False, [])
         self.reqMktData(1011, TYCoContracts.USBNDAtSmart(),
                         "", False, False, [])
+        self.reqMktData(1012, TYCoContracts.USSCZAtSmart(),
+                        "", False, False, [])
+        self.reqMktData(1013, TYCoContracts.USDBCAtSmart(),
+                        "", False, False, [])
 
     @iswrapper
     # ! [tickprice]
@@ -537,6 +549,10 @@ class TestApp(TestWrapper, TestClient):
             self.TAA.VEUp = price
         if(reqId == 1011 and tickType == 66):
             self.TAA.BNDp = price
+        if(reqId == 1012 and tickType == 66):
+            self.TAA.SCZp = price
+        if(reqId == 1013 and tickType == 66):
+            self.TAA.DBCp = price
 
         if(self.TAA.VOOp != 0 and
                 self.TAA.QQQp != 0 and
@@ -550,6 +566,8 @@ class TestApp(TestWrapper, TestClient):
                 self.TAA.VNQp != 0 and
                 self.TAA.VEUp != 0 and
                 self.TAA.BNDp != 0 and
+                self.TAA.SCZp != 0 and
+                self.TAA.DBCp != 0 and
                 self.TAA.trading == 0
            ):
             self.TAA.trading = 1
@@ -683,6 +701,22 @@ class TestApp(TestWrapper, TestClient):
               " bboExchange: ", bboExchange, " snapshotPermissions: ", snapshotPermissions)
     # ! [tickReqParams]
 
+    def market_order_buy(self, contract, position, price):
+        # ! [adaptive]
+        print(" going to BUY ", contract.symbol, " position ", position, "at Market around ",
+              TYCoAlgo.round_to_nth_digits_after_decimal_point_with_base_m(price, 2, 1))
+        baseOrder = TYCoOrders.MarketOrder( "BUY", position )
+        self.placeOrder(self.nextOrderId(), contract, baseOrder)
+        # ! [adaptive]
+
+    def market_order_sell(self, contract, position, price):
+        # ! [adaptive]
+        print(" going to SELL ", contract.symbol, " position ", position, "at Market around ",
+              TYCoAlgo.round_to_nth_digits_after_decimal_point_with_base_m(price, 2, 1))
+        baseOrder = TYCoOrders.MarketOrder( "SELL", position )
+        self.placeOrder(self.nextOrderId(), contract, baseOrder)
+        # ! [adaptive]
+
     def adaptive_order_buy(self, contract, position, price):
         # ! [adaptive]
         print(" going to BUY ", contract.symbol, " position ", position, "at ",
@@ -718,17 +752,19 @@ class TestApp(TestWrapper, TestClient):
         self.cancelMktData(1009)
         self.cancelMktData(1010)
         self.cancelMktData(1011)
+        self.cancelMktData(1012)
+        self.cancelMktData(1013)
         time.sleep(5)
         # predefine allocation
 
-        # Keller and Butler’s Elastic Asset Allocation – Defensive
+        # Keller and Butler’s Elastic Asset Allocation – Defensive/Offensive
         kellerAllocation = 0
-        kellerVOO = 0
-        kellerQQQ = 0
+        kellerVOO = 0.064
+        kellerQQQ = 0.364
         kellerEFA = 0
         kellerEEM = 0
         kellerEWJ = 0
-        kellerIEF = 0
+        kellerIEF = 0.571
         kellerHYG = 0
 
         # Dick Stoken’s Active Combined Asset (ACA)
@@ -741,12 +777,27 @@ class TestApp(TestWrapper, TestClient):
 
         # GEM
         GEMAllocation = 0
-        GEMVOO = 0
+        GEMVOO = 1
         GEMVEU = 0
         GEMBND = 0
 
+        # ADM
+        ADMAllocation = 0
+        ADMVOO = 1    # Use VOO to replace VFINX
+        ADMTLT = 0    # Use TLT to replace VUSTX; Long-term Tressury might hurted by interesetd rate. Could consider replace with IEF or BND.
+        ADMSCZ = 0    # Use SCZ to replace VINEX; Other alternative : SCHC , VSS , GWX ; VINEX only works for US resident.
+
+        # Ray Dalio’s All-Weather
+        RDAWAllocation = 0
+        RDAWDBC = 0.075
+        RDAWGLD = 0.075
+        RDAWIEF = 0.15
+        RDAWTLT = 0.4
+        RDAWVOO = 0.3
+
         targetVOO = (kellerAllocation * kellerVOO) + \
-            (StokenAllocation*StokenVOO) + (GEMAllocation*GEMVOO)
+            (StokenAllocation*StokenVOO) + \
+            (GEMAllocation*GEMVOO) + (ADMAllocation*ADMVOO) + (RDAWAllocation*RDAWVOO)
         diffVOO = targetVOO - (self.TAA.VOO*self.TAA.VOOp)
         print("VOO diff is ", diffVOO)
         if(abs(diffVOO) >= self.TAA.VOOp and self.TAA.VOOp != 0 and abs(diffVOO) > 100):
@@ -811,7 +862,8 @@ class TestApp(TestWrapper, TestClient):
                 self.adaptive_order_sell(TYCoContracts.USEWJAtSmart(),  round(
                     diffEWJ/self.TAA.EWJp), (self.TAA.EWJp*0.99))
 
-        targetIEF = (kellerAllocation*kellerIEF) + (StokenAllocation*StokenIEF)
+        targetIEF = (kellerAllocation*kellerIEF) + \
+            (StokenAllocation*StokenIEF) + (RDAWAllocation*RDAWIEF)
         diffIEF = targetIEF - (self.TAA.IEF*self.TAA.IEFp)
         print("IEF diff is ", diffIEF)
         if(abs(diffIEF) >= self.TAA.IEFp and self.TAA.IEFp != 0 and abs(diffIEF) > 100):
@@ -837,20 +889,21 @@ class TestApp(TestWrapper, TestClient):
                 self.adaptive_order_sell(TYCoContracts.USHYGAtSmart(),  round(
                     diffHYG/self.TAA.HYGp), (self.TAA.HYGp*0.99))
 
-        targetGLD = StokenAllocation*StokenGLD
+        targetGLD = (StokenAllocation*StokenGLD) + (RDAWGLD*RDAWAllocation)
         diffGLD = targetGLD - (self.TAA.GLD*self.TAA.GLDp)
         print("GLD diff is ", diffGLD)
         if(abs(diffGLD) >= self.TAA.GLDp and self.TAA.GLDp != 0 and abs(diffGLD) > 100):
             print("GLD diff is ", diffGLD, "going to do trade with ",
                   (round(diffGLD/self.TAA.GLDp)*self.TAA.GLDp))
             if(diffGLD > 0):
-                self.adaptive_order_buy(TYCoContracts.USGLDAtSmart(),  round(
+                self.market_order_buy(TYCoContracts.USGLDAtSmart(),  round(
                     diffGLD/self.TAA.GLDp), (self.TAA.GLDp*1.01))
             else:
-                self.adaptive_order_sell(TYCoContracts.USGLDAtSmart(),  round(
+                self.market_order_sell(TYCoContracts.USGLDAtSmart(),  round(
                     diffGLD/self.TAA.GLDp), (self.TAA.GLDp*0.99))
 
-        targetTLT = StokenAllocation*StokenTLT
+        targetTLT = (StokenAllocation*StokenTLT) + \
+            (ADMAllocation*ADMTLT)+(RDAWAllocation*RDAWTLT)
         diffTLT = targetTLT - (self.TAA.TLT*self.TAA.TLTp)
         print("TLT diff is ", diffTLT)
         if(abs(diffTLT) >= self.TAA.TLTp and self.TAA.TLTp != 0 and abs(diffTLT) > 100):
@@ -901,6 +954,32 @@ class TestApp(TestWrapper, TestClient):
             else:
                 self.adaptive_order_sell(TYCoContracts.USBNDAtSmart(),  round(
                     diffBND/self.TAA.BNDp), (self.TAA.BNDp*0.99))
+
+        targetSCZ = ADMAllocation*ADMSCZ
+        diffSCZ = targetSCZ - (self.TAA.SCZ*self.TAA.SCZp)
+        print("SCZ diff is ", diffSCZ)
+        if(abs(diffSCZ) >= self.TAA.SCZp and self.TAA.SCZp != 0 and abs(diffSCZ) > 100):
+            print("SCZ diff is ", diffSCZ, "going to do trade with ",
+                  (round(diffSCZ/self.TAA.SCZp)*self.TAA.SCZp))
+            if(diffSCZ > 0):
+                self.adaptive_order_buy(TYCoContracts.USSCZAtSmart(),  round(
+                    diffSCZ/self.TAA.SCZp), (self.TAA.SCZp*1.01))
+            else:
+                self.adaptive_order_sell(TYCoContracts.USSCZAtSmart(),  round(
+                    diffSCZ/self.TAA.SCZp), (self.TAA.SCZp*0.99))
+
+        targetDBC = RDAWAllocation*RDAWDBC
+        diffDBC = targetDBC - (self.TAA.DBC*self.TAA.DBCp)
+        print("DBC diff is ", diffDBC)
+        if(abs(diffDBC) >= self.TAA.DBCp and self.TAA.DBCp != 0 and abs(diffDBC) > 100):
+            print("DBC diff is ", diffDBC, "going to do trade with ",
+                  (round(diffDBC/self.TAA.DBCp)*self.TAA.DBCp))
+            if(diffDBC > 0):
+                self.adaptive_order_buy(TYCoContracts.USDBCAtSmart(),  round(
+                    diffDBC/self.TAA.DBCp), (self.TAA.DBCp*1.01))
+            else:
+                self.adaptive_order_sell(TYCoContracts.USDBCAtSmart(),  round(
+                    diffDBC/self.TAA.DBCp), (self.TAA.DBCp*0.99))
 
     def orderOperations_cancel(self):
         if self.simplePlaceOid is not None:

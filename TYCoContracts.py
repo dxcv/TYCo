@@ -268,7 +268,6 @@ class TYCoContracts:
         #! [cashcontract]
         return contract
 
-
     @staticmethod
     def Index():
         #! [indcontract]
@@ -346,6 +345,17 @@ class TYCoContracts:
         return contract
 
     @staticmethod
+    def MutualFund_VINEX():
+        #! [fundcontract]
+        contract = Contract()
+        contract.symbol = "VINEX"
+        contract.secType = "FUND"
+        contract.exchange = "FUNDSERV"
+        contract.currency = "USD"
+        #! [fundcontract]
+        return contract
+
+    @staticmethod
     def Commodity():
         #! [commoditycontract]
         contract = Contract()
@@ -354,6 +364,15 @@ class TYCoContracts:
         contract.exchange = "SMART"
         contract.currency = "USD"
         #! [commoditycontract]
+        return contract
+
+    @staticmethod
+    def USDBCAtSmart():
+        contract = Contract()
+        contract.symbol = "DBC"
+        contract.secType = "STK"
+        contract.currency = "USD"
+        contract.exchange = "SMART"
         return contract
 
     @staticmethod
@@ -395,6 +414,15 @@ class TYCoContracts:
     def USSPYAtSmart():
         contract = Contract()
         contract.symbol = "SPY"
+        contract.secType = "STK"
+        contract.currency = "USD"
+        contract.exchange = "SMART"
+        return contract
+
+    @staticmethod
+    def USSCZAtSmart():
+        contract = Contract()
+        contract.symbol = "SCZ"
         contract.secType = "STK"
         contract.currency = "USD"
         contract.exchange = "SMART"

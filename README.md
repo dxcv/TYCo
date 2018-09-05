@@ -6,7 +6,9 @@ Note:
 
 * This is modified from Interactive Brokers sample code.
 * Code is not pretty but workable.
-* Use VOO to replace SPY for lower expense ratio 
+* Use VOO to replace SPY for lower expense ratio.
+* Suggest to test with paper trading account first.
+* GLD don't support IB algo order, so here it use Market order
 
 Usage:
 
@@ -37,8 +39,29 @@ Modify the following value in TAA.py according to current Tactical asset allocat
         GEMVEU = 0
         GEMBND = 0
 
+        # ADM
+        ADMAllocation = 1000
+        ADMVOO = 1    # Use VOO to replace VFINX
+        ADMTLT = 0    # Use TLT to replace VUSTX; Long-term Tressury might hurted by interesetd rate. Could consider replace with IEF or BND.
+        ADMSCZ = 0    # Use SCZ to replace VINEX; Other alternative : SCHC , VSS , GWX ; VINEX only works for US resident.
+
+        # Ray Dalio’s All-Weather
+        RDAWAllocation = 1000
+        RDAWDBC = 0.075
+        RDAWGLD = 0.075
+        RDAWIEF = 0.15
+        RDAWTLT = 0.4
+        RDAWVOO = 0.3
 
 2. 
 Execute
 
 python3 TAA.py
+
+
+
+*Disclaimer
+
+TYCo does not make any guarantee or other promise as to any results that may be obtained from using our content. No one should make any investment decision without first consulting his or her own financial advisor and conducting his or her own research and due diligence. To the maximum extent permitted by law, TYCo disclaims any and all liability in the event any information, commentary, analysis, opinions, advice and/or recommendations prove to be inaccurate, incomplete or unreliable, or result in any investment or other losses.
+
+
