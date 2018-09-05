@@ -8,7 +8,7 @@ Note:
 * Code is not pretty but workable.
 * Use VOO to replace SPY for lower expense ratio.
 * Suggest to test with paper trading account first.
-* GLD don't support IB algo order, so here it use Market order
+* GLD doesn't support IB algo order, so here it use Market order.
 
 Usage:
 
