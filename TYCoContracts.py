@@ -356,6 +356,17 @@ class TYCoContracts:
         return contract
 
     @staticmethod
+    def MutualFund_VFINX():
+        #! [fundcontract]
+        contract = Contract()
+        contract.symbol = "VFINX"
+        contract.secType = "FUND"
+        contract.exchange = "FUNDSERV"
+        contract.currency = "USD"
+        #! [fundcontract]
+        return contract
+
+    @staticmethod
     def Commodity():
         #! [commoditycontract]
         contract = Contract()
@@ -435,6 +446,15 @@ class TYCoContracts:
         contract.secType = "STK"
         contract.currency = "USD"
         contract.exchange = "SMART"
+        return contract
+
+    @staticmethod
+    def USVOOAtNYSE():
+        contract = Contract()
+        contract.symbol = "VOO"
+        contract.secType = "STK"
+        contract.currency = "USD"
+        contract.exchange = "NYSE"
         return contract
 
     @staticmethod
@@ -525,6 +545,70 @@ class TYCoContracts:
         contract.secType = "STK"
         contract.currency = "USD"
         contract.exchange = "SMART"
+        return contract
+
+    @staticmethod
+    def USVEAAtSmart():
+        contract = Contract()
+        contract.symbol = "VEA"
+        contract.secType = "STK"
+        contract.currency = "USD"
+        contract.exchange = "SMART"
+        return contract
+
+    @staticmethod
+    def USVWOAtSmart():
+        contract = Contract()
+        contract.symbol = "VWO"
+        contract.secType = "STK"
+        contract.currency = "USD"
+        contract.exchange = "SMART"
+        return contract
+
+    @staticmethod
+    def USSHYAtSmart():
+        contract = Contract()
+        contract.symbol = "SHY"
+        contract.secType = "STK"
+        contract.currency = "USD"
+        contract.exchange = "SMART"
+        return contract
+
+    @staticmethod
+    def USLQDAtSmart():
+        contract = Contract()
+        contract.symbol = "LQD"
+        contract.secType = "STK"
+        contract.currency = "USD"
+        contract.exchange = "SMART"
+        return contract
+
+    @staticmethod
+    def USEZUAtSmart():
+        contract = Contract()
+        contract.symbol = "EZU"
+        contract.secType = "STK"
+        contract.currency = "USD"
+        contract.exchange = "SMART"
+        return contract
+
+    @staticmethod
+    def USRWXAtSmart():
+        contract = Contract()
+        contract.symbol = "RWX"
+        contract.secType = "STK"
+        contract.currency = "USD"
+        contract.exchange = "SMART"
+        return contract
+
+
+    @staticmethod
+    def USBNDAtNYSE():
+        contract = Contract()
+        contract.symbol = "BND"
+        contract.secType = "STK"
+        contract.currency = "USD"
+        contract.exchange = "NYSE"
         return contract
 
     @staticmethod

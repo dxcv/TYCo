@@ -8,6 +8,7 @@ import argparse
 import datetime
 import collections
 import inspect
+import numpy as np
 
 import logging
 import time
@@ -189,36 +190,48 @@ class TestWrapper(wrapper.EWrapper):
 
 
 class TAA_struct(object):
-    def __init__(self, VOO, VOOp, QQQ, QQQp, EFA, EFAp, EEM, EEMp, EWJ, EWJp, IEF, IEFp, HYG, HYGp, GLD, GLDp, TLT, TLTp, VNQ, VNQp, VEU, VEUp, BND, BNDp, SCZ, SCZp, DBC, DBCp, trading):
-        self.VOO = VOO
-        self.VOOp = VOOp
-        self.QQQ = QQQ
-        self.QQQp = QQQp
-        self.EFA = EFA
-        self.EFAp = EFAp
-        self.EEM = EEM
-        self.EEMp = EEMp
-        self.EWJ = EWJ
-        self.EWJp = EWJp
-        self.IEF = IEF
-        self.IEFp = IEFp
-        self.HYG = HYG
-        self.HYGp = HYGp
-        self.GLD = GLD
-        self.GLDp = GLDp
-        self.TLT = TLT
-        self.TLTp = TLTp
-        self.VNQ = VNQ
-        self.VNQp = VNQp
-        self.VEU = VEU
-        self.VEUp = VEUp
-        self.BND = BND
-        self.BNDp = BNDp
-        self.SCZ = SCZ
-        self.SCZp = SCZp
-        self.DBC = DBC
-        self.DBCp = DBCp
-        self.trading = trading
+    def __init__(self):
+        self.VOO = 0
+        self.VOOp = 0
+        self.QQQ = 0
+        self.QQQp = 0
+        self.EZU = 0
+        self.EZUp = 0
+        self.EFA = 0
+        self.EFAp = 0
+        self.EEM = 0
+        self.EEMp = 0
+        self.EWJ = 0
+        self.EWJp = 0
+        self.IEF = 0
+        self.IEFp = 0
+        self.HYG = 0
+        self.HYGp = 0
+        self.GLD = 0
+        self.GLDp = 0
+        self.TLT = 0
+        self.TLTp = 0
+        self.VNQ = 0
+        self.VNQp = 0
+        self.VEU = 0
+        self.VEUp = 0
+        self.VEA = 0
+        self.VEAp = 0
+        self.VWO = 0
+        self.VWOp = 0
+        self.BND = 0
+        self.BNDp = 0
+        self.SCZ = 0
+        self.SCZp = 0
+        self.DBC = 0
+        self.DBCp = 0
+        self.SHY = 0
+        self.SHYp = 0
+        self.LQD = 0
+        self.LQDp = 0
+        self.RWX = 0
+        self.RWXp = 0
+        self.trading = 0
 
 # Dick Stoken’s Active Combined Asset (ACA)
 # S&P 500 (VOO) vs Intermediate-term US Treasuries (IEF)
@@ -226,7 +239,6 @@ class TAA_struct(object):
 # US Real Estate (VNQ) vs Intermediate-term US Treasuries (IEF)
 
 # ! [socket_init]
-
 
 class TestApp(TestWrapper, TestClient):
     def __init__(self):
@@ -240,8 +252,11 @@ class TestApp(TestWrapper, TestClient):
         self.reqId2nErr = collections.defaultdict(int)
         self.globalCancelOnly = False
         self.simplePlaceOid = None
-        self.TAA = TAA_struct(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-                              0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
+        self.manual_update = 0
+        self.price_method = 0
+        self.real_trade = 0
+        self.cash_overwrite = 0
+        self.TAA = TAA_struct()
 
     def dumpTestCoverageSituation(self):
         for clntMeth in sorted(self.clntMeth2callCount.keys()):
@@ -307,8 +322,6 @@ class TestApp(TestWrapper, TestClient):
     def stop(self):
         print("Executing cancels")
         self.orderOperations_cancel()
-        self.accountOperations_cancel()
-        self.tickDataOperations_cancel()
         print("Executing cancels ... finished")
 
     def nextOrderId(self):
@@ -381,6 +394,36 @@ class TestApp(TestWrapper, TestClient):
 
         self.account = accountsList.split(",")[0]
 
+
+    @printWhenExecuting
+    def historicalDataRequests_req(self):
+        # Requesting historical data
+        # ! [reqhistoricaldata]
+        queryTime = datetime.datetime.today().strftime("%Y%m%d %H:%M:%S")
+        print(" request VOO Historical Data ")
+        self.reqHistoricalData(3000, TYCoContracts.USVOOAtNYSE(), queryTime,
+                               "1 Y", "1 month", "MIDPOINT", 1, 1, False, [])
+        self.reqHeadTimeStamp(4103, TYCoContracts.USVOOAtNYSE(), "TRADES", 0, 1)
+
+    @printWhenExecuting
+    def historicalDataRequests_cancel(self):
+        # Canceling historical data requests
+        self.cancelHistoricalData(3000)
+
+    @iswrapper
+    # ! [historicaldata]
+    def historicalData(self, reqId: int, bar: BarData):
+        print("HistoricalData. ", reqId, " Date:", bar.date, "Open:", bar.open,
+              "High:", bar.high, "Low:", bar.low, "Close:", bar.close, "Volume:", bar.volume,
+              "Count:", bar.barCount, "WAP:", bar.average)
+
+    @iswrapper
+    # ! [historicaldataend]
+    def historicalDataEnd(self, reqId: int, start: str, end: str):
+        super().historicalDataEnd(reqId, start, end)
+        print("HistoricalDataEnd ", reqId, "from", start, "to", end)
+        
+
     @printWhenExecuting
     def request_update_portfolio(self):
         self.reqAccountUpdates(True, self.account)
@@ -406,6 +449,8 @@ class TestApp(TestWrapper, TestClient):
             self.TAA.QQQ = position
         if(contract.symbol == "EFA"):
             self.TAA.EFA = position
+        if(contract.symbol == "EZU"):
+            self.TAA.EZU = position
         if(contract.symbol == "EEM"):
             self.TAA.EEM = position
         if(contract.symbol == "EWJ"):
@@ -422,12 +467,22 @@ class TestApp(TestWrapper, TestClient):
             self.TAA.VNQ = position
         if(contract.symbol == "VEU"):
             self.TAA.VEU = position
+        if(contract.symbol == "VEA"):
+            self.TAA.VEA = position
+        if(contract.symbol == "VWO"):
+            self.TAA.VWO = position
         if(contract.symbol == "BND"):
             self.TAA.BND = position
         if(contract.symbol == "SCZ"):
             self.TAA.SCZ = position
         if(contract.symbol == "DBC"):
             self.TAA.DBC = position
+        if(contract.symbol == "SHY"):
+            self.TAA.SHY = position
+        if(contract.symbol == "LQD"):
+            self.TAA.LQD = position
+        if(contract.symbol == "RWX"):
+            self.TAA.RWX = position            
     # ! [updateportfolio]
 
     @iswrapper
@@ -492,7 +547,6 @@ class TestApp(TestWrapper, TestClient):
                         "", False, False, [])
         self.reqMktData(1004, TYCoContracts.USEWJAtSmart(),
                         "", False, False, [])
-
         self.reqMktData(1005, TYCoContracts.USIEFAtSmart(),
                         "", False, False, [])
         self.reqMktData(1006, TYCoContracts.USHYGAtSmart(),
@@ -511,7 +565,18 @@ class TestApp(TestWrapper, TestClient):
                         "", False, False, [])
         self.reqMktData(1013, TYCoContracts.USDBCAtSmart(),
                         "", False, False, [])
-
+        self.reqMktData(1014, TYCoContracts.USVEAAtSmart(),
+                        "", False, False, [])
+        self.reqMktData(1015, TYCoContracts.USVWOAtSmart(),
+                        "", False, False, [])
+        self.reqMktData(1016, TYCoContracts.USSHYAtSmart(),
+                        "", False, False, [])        
+        self.reqMktData(1017, TYCoContracts.USLQDAtSmart(),
+                        "", False, False, [])     
+        self.reqMktData(1018, TYCoContracts.USEZUAtSmart(),
+                        "", False, False, [])   
+        self.reqMktData(1019, TYCoContracts.USRWXAtSmart(),
+                        "", False, False, [])   
     @iswrapper
     # ! [tickprice]
     def tickPrice(self, reqId: TickerId, tickType: TickType, price: float,
@@ -553,6 +618,18 @@ class TestApp(TestWrapper, TestClient):
             self.TAA.SCZp = price
         if(reqId == 1013 and tickType == 66):
             self.TAA.DBCp = price
+        if(reqId == 1014 and tickType == 66):
+            self.TAA.VEAp = price
+        if(reqId == 1015 and tickType == 66):
+            self.TAA.VWOp = price
+        if(reqId == 1016 and tickType == 66):
+            self.TAA.SHYp = price
+        if(reqId == 1017 and tickType == 66):
+            self.TAA.LQDp = price
+        if(reqId == 1018 and tickType == 66):
+            self.TAA.EZUp = price
+        if(reqId == 1019 and tickType == 66):
+            self.TAA.RWXp = price
 
         if(self.TAA.VOOp != 0 and
                 self.TAA.QQQp != 0 and
@@ -568,6 +645,12 @@ class TestApp(TestWrapper, TestClient):
                 self.TAA.BNDp != 0 and
                 self.TAA.SCZp != 0 and
                 self.TAA.DBCp != 0 and
+                self.TAA.VEAp != 0 and
+                self.TAA.VWOp != 0 and
+                self.TAA.SHYp != 0 and
+                self.TAA.LQDp != 0 and
+                self.TAA.EZUp != 0 and
+                self.TAA.RWXp != 0 and
                 self.TAA.trading == 0
            ):
             self.TAA.trading = 1
@@ -615,20 +698,6 @@ class TestApp(TestWrapper, TestClient):
         print("HeadTimestamp: ", reqId, " ", headTimestamp)
     # ! [headTimestamp]
 
-    @iswrapper
-    # ! [historicaldata]
-    def historicalData(self, reqId: int, bar: BarData):
-        print("HistoricalData. ", reqId, " Date:", bar.date, "Open:", bar.open,
-              "High:", bar.high, "Low:", bar.low, "Close:", bar.close, "Volume:", bar.volume,
-              "Count:", bar.barCount, "WAP:", bar.average)
-    # ! [historicaldata]
-
-    @iswrapper
-    # ! [historicaldataend]
-    def historicalDataEnd(self, reqId: int, start: str, end: str):
-        super().historicalDataEnd(reqId, start, end)
-        print("HistoricalDataEnd ", reqId, "from", start, "to", end)
-    # ! [historicaldataend]
 
     @iswrapper
     # ! [historicalDataUpdate]
@@ -703,18 +772,21 @@ class TestApp(TestWrapper, TestClient):
 
     def market_order_buy(self, contract, position, price):
         # ! [adaptive]
+
         print(" going to BUY ", contract.symbol, " position ", position, "at Market around ",
               TYCoAlgo.round_to_nth_digits_after_decimal_point_with_base_m(price, 2, 1))
         baseOrder = TYCoOrders.MarketOrder( "BUY", position )
-        self.placeOrder(self.nextOrderId(), contract, baseOrder)
+        if self.real_trade == '1' :
+            self.placeOrder(self.nextOrderId(), contract, baseOrder)
         # ! [adaptive]
 
     def market_order_sell(self, contract, position, price):
         # ! [adaptive]
         print(" going to SELL ", contract.symbol, " position ", position, "at Market around ",
               TYCoAlgo.round_to_nth_digits_after_decimal_point_with_base_m(price, 2, 1))
-        baseOrder = TYCoOrders.MarketOrder( "SELL", position )
-        self.placeOrder(self.nextOrderId(), contract, baseOrder)
+        baseOrder = TYCoOrders.MarketOrder( "SELL", abs(position) )
+        if self.real_trade == '1' :
+            self.placeOrder(self.nextOrderId(), contract, baseOrder)
         # ! [adaptive]
 
     def adaptive_order_buy(self, contract, position, price):
@@ -724,7 +796,8 @@ class TestApp(TestWrapper, TestClient):
         baseOrder = TYCoOrders.LimitOrder(
             "BUY", position, TYCoAlgo.round_to_nth_digits_after_decimal_point_with_base_m(price, 2, 1))
         AvailableAlgoParams.FillAdaptiveParams(baseOrder, "Patient")
-        self.placeOrder(self.nextOrderId(), contract, baseOrder)
+        if self.real_trade == '1':
+            self.placeOrder(self.nextOrderId(), contract, baseOrder)
         # ! [adaptive]
 
     def adaptive_order_sell(self, contract, position, price):
@@ -734,7 +807,8 @@ class TestApp(TestWrapper, TestClient):
         baseOrder = TYCoOrders.LimitOrder(
             "SELL", abs(position), TYCoAlgo.round_to_nth_digits_after_decimal_point_with_base_m(price, 2, 1))
         AvailableAlgoParams.FillAdaptiveParams(baseOrder, "Patient")
-        self.placeOrder(self.nextOrderId(), contract, baseOrder)
+        if self.real_trade == '1' :
+            self.placeOrder(self.nextOrderId(), contract, baseOrder)
         # ! [adaptive]
 
     @printWhenExecuting
@@ -754,17 +828,129 @@ class TestApp(TestWrapper, TestClient):
         self.cancelMktData(1011)
         self.cancelMktData(1012)
         self.cancelMktData(1013)
+        self.cancelMktData(1014)
+        self.cancelMktData(1015)
+        self.cancelMktData(1016)
+        self.cancelMktData(1017)
+        self.cancelMktData(1018)
+        self.cancelMktData(1019)
         time.sleep(5)
         # predefine allocation
+        print ('\n')
+        print ("manual update is ", self.manual_update)
+        print ("price method is ", self.price_method)
+        print ("read trade is ", self.real_trade)
+        print ("cash overwrite is ", self.cash_overwrite)
+        '''
+        # We could overwrite parameters here
+        self.manual_update='0'
+        self.price_method='0'
+        self.real_trade='0'
+        self.cash_overwrite='0'
+        '''
+        tradeThreshold = 100
+        # Keller and Butler’s Vigilant Asset Allocation – G4 (VAA)
+        VAAAllocation = 0
+        if ( self.manual_update == '1' ):
+            VAAVOO = 0
+            VAAVEA = 0
+            VAAVWO = 0
+            VAABND = 0
+            VAASHY = 0
+            VAAIEF = 0
+            VAALQD = 0
+        else:
+            VAA = TYCoAlgo.get_VAA_allocations(self.price_method)
+            VAAVOO = VAA[0]
+            VAAVEA = VAA[1]
+            VAAVWO = VAA[2]
+            VAABND = VAA[3]
+            if self.cash_overwrite == '1':
+                VAASHY = 0    
+            else:
+                VAASHY = VAA[4]
+            VAAIEF = VAA[5]
+            VAALQD = VAA[6]
 
-        # Keller and Butler’s Elastic Asset Allocation – Defensive/Offensive
+
+
+        # Accelerating Dual Momentum (ADM)
+        ADMAllocation = 0
+        if ( self.manual_update == '1'):
+            ADMVOO = 0    # Use VOO to replace VFINX
+            ADMSCZ = 0    # Use SCZ to replace VINEX; Other alternative : SCHC , VSS , GWX ; VINEX only works for US resident.
+            ADMTLT = 0    # Use TLT to replace VUSTX; Long-term Tressury might hurted by interesetd rate. Could consider replace with IEF or BND.
+        else:
+            ADM = TYCoAlgo.get_ADM_allocations(self.price_method)
+            ADMVOO = ADM[0]
+            ADMSCZ = ADM[1]
+            if self.cash_overwrite == '1':
+                ADMTLT = 0    
+            else:
+                ADMTLT = ADM[2]
+
+        # Adaptive Asset Allocation: A Primer (AAA)
+        AAAAllocation = 0
+        if ( self.manual_update == '1' ):
+            AAAVOO = 0
+            AAAEZU = 0
+            AAAEWJ = 0
+            AAAEEM = 0
+            AAAVNQ = 0
+            AAARWX = 0
+            AAAIEF = 0
+            AAATLT = 0
+            AAADBC = 0
+            AAAGLD = 0
+        else:
+            AAA = TYCoAlgo.get_AAA_allocations()
+            AAAVOO = AAA[0]
+            AAAEZU = AAA[1]
+            AAAEWJ = AAA[2]
+            AAAEEM = AAA[3]
+            AAAVNQ = AAA[4]
+            AAARWX = AAA[5]
+            AAAIEF = AAA[6]
+            AAATLT = AAA[7]
+            AAADBC = AAA[8]
+            AAAGLD = AAA[9]
+
+
+        # Ray Dalio’s All-Weather ( Fixed allocation )
+        RDAWAllocation = 0
+        #( Fixed allocation )
+        RDAWDBC = 0.075
+        RDAWGLD = 0.075
+        RDAWIEF = 0.15
+        RDAWTLT = 0.4
+        RDAWVOO = 0.3
+
+        # GLOBAL EQUITIES MOMENTUM (GEM)
+        GEMAllocation = 0
+        if ( self.manual_update == '1' ):
+            GEMVOO = 0
+            GEMVEU = 0
+            GEMBND = 0
+        else:
+            GEM = TYCoAlgo.get_GEM_allocations(self.price_method)
+            GEMVOO = GEM[0]
+            GEMVEU = GEM[1]
+            if self.cash_overwrite == '1':
+                GEMBND = 0    
+            else:
+                GEMBND = GEM[2]
+        
+
+        # Only manual update available for "Keller and Butler’s Elastic Asset Allocation" and "Dick Stoken’s Active Combined Asset (ACA)"
+
+        # Keller and Butler’s Elastic Asset Allocation 
         kellerAllocation = 0
-        kellerVOO = 0.064
-        kellerQQQ = 0.364
+        kellerVOO = 0
+        kellerQQQ = 0
         kellerEFA = 0
         kellerEEM = 0
         kellerEWJ = 0
-        kellerIEF = 0.571
+        kellerIEF = 0
         kellerHYG = 0
 
         # Dick Stoken’s Active Combined Asset (ACA)
@@ -774,212 +960,274 @@ class TestApp(TestWrapper, TestClient):
         StokenGLD = 0
         StokenTLT = 0
         StokenVNQ = 0
-
-        # GEM
-        GEMAllocation = 0
-        GEMVOO = 1
-        GEMVEU = 0
-        GEMBND = 0
-
-        # ADM
-        ADMAllocation = 0
-        ADMVOO = 1    # Use VOO to replace VFINX
-        ADMTLT = 0    # Use TLT to replace VUSTX; Long-term Tressury might hurted by interesetd rate. Could consider replace with IEF or BND.
-        ADMSCZ = 0    # Use SCZ to replace VINEX; Other alternative : SCHC , VSS , GWX ; VINEX only works for US resident.
-
-        # Ray Dalio’s All-Weather
-        RDAWAllocation = 0
-        RDAWDBC = 0.075
-        RDAWGLD = 0.075
-        RDAWIEF = 0.15
-        RDAWTLT = 0.4
-        RDAWVOO = 0.3
+        
+        
 
         targetVOO = (kellerAllocation * kellerVOO) + \
             (StokenAllocation*StokenVOO) + \
-            (GEMAllocation*GEMVOO) + (ADMAllocation*ADMVOO) + (RDAWAllocation*RDAWVOO)
+            (GEMAllocation*GEMVOO) + (ADMAllocation*ADMVOO) + (RDAWAllocation*RDAWVOO) + (VAAAllocation*VAAVOO) + (AAAAllocation*AAAVOO)
         diffVOO = targetVOO - (self.TAA.VOO*self.TAA.VOOp)
         print("VOO diff is ", diffVOO)
-        if(abs(diffVOO) >= self.TAA.VOOp and self.TAA.VOOp != 0 and abs(diffVOO) > 100):
+        if(abs(diffVOO) >= self.TAA.VOOp and self.TAA.VOOp != 0 and abs(diffVOO) > tradeThreshold):
             print("VOO diff is ", diffVOO, "going to do trade with ",
                   (round(diffVOO/self.TAA.VOOp)*self.TAA.VOOp))
-            if(diffVOO > 0):
+            if(diffVOO > 0  ):
                 self.adaptive_order_buy(TYCoContracts.USVOOAtSmart(),  round(
-                    diffVOO/self.TAA.VOOp), (self.TAA.VOOp*1.01))
+                    diffVOO/self.TAA.VOOp), (self.TAA.VOOp*1.005))
             else:
                 self.adaptive_order_sell(TYCoContracts.USVOOAtSmart(),  round(
-                    diffVOO/self.TAA.VOOp), (self.TAA.VOOp*0.99))
+                    diffVOO/self.TAA.VOOp), (self.TAA.VOOp*0.995))
 
-        targetQQQ = kellerAllocation*kellerQQQ
+        targetEZU = (AAAAllocation*AAAEZU)
+        diffEZU = targetEZU - (self.TAA.EZU*self.TAA.EZUp)
+        print("EZU diff is ", diffEZU)
+        if(abs(diffEZU) >= self.TAA.EZUp and self.TAA.EZUp != 0 and abs(diffEZU) > tradeThreshold):
+            print("EZU diff is ", diffEZU, "going to do trade with ",
+                  (round(diffEZU/self.TAA.EZUp)*self.TAA.EZUp))
+            if(diffEZU > 0  ):
+                self.adaptive_order_buy(TYCoContracts.USEZUAtSmart(),  round(
+                    diffEZU/self.TAA.EZUp), (self.TAA.EZUp*1.005))
+            else:
+                self.adaptive_order_sell(TYCoContracts.USEZUAtSmart(),  round(
+                    diffEZU/self.TAA.EZUp), (self.TAA.EZUp*0.995))
+
+        targetRWX = (AAAAllocation*AAARWX)
+        diffRWX = targetRWX - (self.TAA.RWX*self.TAA.RWXp)
+        print("RWX diff is ", diffRWX)
+        if(abs(diffRWX) >= self.TAA.RWXp and self.TAA.RWXp != 0 and abs(diffRWX) > tradeThreshold):
+            print("RWX diff is ", diffRWX, "going to do trade with ",
+                  (round(diffRWX/self.TAA.RWXp)*self.TAA.RWXp))
+            if(diffRWX > 0  ):
+                self.adaptive_order_buy(TYCoContracts.USRWXAtSmart(),  round(
+                    diffRWX/self.TAA.RWXp), (self.TAA.RWXp*1.005))
+            else:
+                self.adaptive_order_sell(TYCoContracts.USRWXAtSmart(),  round(
+                    diffRWX/self.TAA.RWXp), (self.TAA.RWXp*0.995))
+
+        targetQQQ = (kellerAllocation*kellerQQQ)
         diffQQQ = targetQQQ - (self.TAA.QQQ*self.TAA.QQQp)
         print("QQQ diff is ", diffQQQ)
-        if(abs(diffQQQ) >= self.TAA.QQQp and self.TAA.QQQp != 0 and abs(diffQQQ) > 100):
+        if(abs(diffQQQ) >= self.TAA.QQQp and self.TAA.QQQp != 0 and abs(diffQQQ) > tradeThreshold):
             print("QQQ diff is ", diffQQQ, "going to do trade with ",
                   (round(diffQQQ/self.TAA.QQQp)*self.TAA.QQQp))
-            if(diffQQQ > 0):
+            if(diffQQQ > 0  ):
                 self.adaptive_order_buy(TYCoContracts.USQQQAtSmart(),  round(
-                    diffQQQ/self.TAA.QQQp), (self.TAA.QQQp*1.01))
+                    diffQQQ/self.TAA.QQQp), (self.TAA.QQQp*1.005))
             else:
                 self.adaptive_order_sell(TYCoContracts.USQQQAtSmart(),  round(
-                    diffQQQ/self.TAA.QQQp), (self.TAA.QQQp*0.99))
+                    diffQQQ/self.TAA.QQQp), (self.TAA.QQQp*0.995))
 
-        targetEFA = kellerAllocation*kellerEFA
+        targetEFA = (kellerAllocation*kellerEFA)
         diffEFA = targetEFA - (self.TAA.EFA*self.TAA.EFAp)
         print("EFA diff is ", diffEFA)
-        if(abs(diffEFA) >= self.TAA.EFAp and self.TAA.EFAp != 0 and abs(diffEFA) > 100):
+        if(abs(diffEFA) >= self.TAA.EFAp and self.TAA.EFAp != 0 and abs(diffEFA) > tradeThreshold):
             print("EFA diff is ", diffEFA, "going to do trade with ",
                   (round(diffEFA/self.TAA.EFAp)*self.TAA.EFAp))
-            if(diffEFA > 0):
+            if(diffEFA > 0  ):
                 self.adaptive_order_buy(TYCoContracts.USEFAAtSmart(),  round(
-                    diffEFA/self.TAA.EFAp), (self.TAA.EFAp*1.01))
+                    diffEFA/self.TAA.EFAp), (self.TAA.EFAp*1.005))
             else:
                 self.adaptive_order_sell(TYCoContracts.USEFAAtSmart(),  round(
-                    diffEFA/self.TAA.EFAp), (self.TAA.EFAp*0.99))
+                    diffEFA/self.TAA.EFAp), (self.TAA.EFAp*0.995))
 
-        targetEEM = kellerAllocation*kellerEEM
+        targetEEM = (kellerAllocation*kellerEEM)+(AAAAllocation*AAAEEM)
         diffEEM = targetEEM - (self.TAA.EEM*self.TAA.EEMp)
         print("EEM diff is ", diffEEM)
-        if(abs(diffEEM) >= self.TAA.EEMp and self.TAA.EEMp != 0 and abs(diffEEM) > 100):
+        if(abs(diffEEM) >= self.TAA.EEMp and self.TAA.EEMp != 0 and abs(diffEEM) > tradeThreshold):
             print("EEM diff is ", diffEEM, "going to do trade with ",
                   (round(diffEEM/self.TAA.EEMp)*self.TAA.EEMp))
-            if(diffEEM > 0):
+            if(diffEEM > 0  ):
                 self.adaptive_order_buy(TYCoContracts.USEEMAtSmart(),  round(
-                    diffEEM/self.TAA.EEMp), (self.TAA.EEMp*1.01))
+                    diffEEM/self.TAA.EEMp), (self.TAA.EEMp*1.005))
             else:
                 self.adaptive_order_sell(TYCoContracts.USEEMAtSmart(),  round(
-                    diffEEM/self.TAA.EEMp), (self.TAA.EEMp*0.99))
+                    diffEEM/self.TAA.EEMp), (self.TAA.EEMp*0.995))
 
-        targetEWJ = kellerAllocation*kellerEWJ
+        targetEWJ = (kellerAllocation*kellerEWJ) + (AAAAllocation*AAAEWJ)
         diffEWJ = targetEWJ - (self.TAA.EWJ*self.TAA.EWJp)
         print("EWJ diff is ", diffEWJ)
-        if(abs(diffEWJ) >= self.TAA.EWJp and self.TAA.EWJp != 0 and abs(diffEWJ) > 100):
+        if(abs(diffEWJ) >= self.TAA.EWJp and self.TAA.EWJp != 0 and abs(diffEWJ) > tradeThreshold):
             print("EWJ diff is ", diffEWJ, "going to do trade with ",
                   (round(diffEWJ/self.TAA.EWJp)*self.TAA.EWJp))
-            if(diffEWJ > 0):
+            if(diffEWJ > 0  ):
                 self.adaptive_order_buy(TYCoContracts.USEWJAtSmart(),  round(
-                    diffEWJ/self.TAA.EWJp), (self.TAA.EWJp*1.01))
+                    diffEWJ/self.TAA.EWJp), (self.TAA.EWJp*1.005))
             else:
                 self.adaptive_order_sell(TYCoContracts.USEWJAtSmart(),  round(
-                    diffEWJ/self.TAA.EWJp), (self.TAA.EWJp*0.99))
+                    diffEWJ/self.TAA.EWJp), (self.TAA.EWJp*0.995))
 
         targetIEF = (kellerAllocation*kellerIEF) + \
-            (StokenAllocation*StokenIEF) + (RDAWAllocation*RDAWIEF)
+            (StokenAllocation*StokenIEF) + (RDAWAllocation*RDAWIEF) + (VAAAllocation*VAAIEF) + (AAAAllocation*AAAIEF)
         diffIEF = targetIEF - (self.TAA.IEF*self.TAA.IEFp)
         print("IEF diff is ", diffIEF)
-        if(abs(diffIEF) >= self.TAA.IEFp and self.TAA.IEFp != 0 and abs(diffIEF) > 100):
+        if(abs(diffIEF) >= self.TAA.IEFp and self.TAA.IEFp != 0 and abs(diffIEF) > tradeThreshold):
             print("IEF diff is ", diffIEF, "going to do trade with ",
                   (round(diffIEF/self.TAA.IEFp)*self.TAA.IEFp))
-            if(diffIEF > 0):
+            if(diffIEF > 0  ):
                 self.adaptive_order_buy(TYCoContracts.USIEFAtSmart(),  round(
-                    diffIEF/self.TAA.IEFp), (self.TAA.IEFp*1.01))
+                    diffIEF/self.TAA.IEFp), (self.TAA.IEFp*1.005))
             else:
                 self.adaptive_order_sell(TYCoContracts.USIEFAtSmart(),  round(
-                    diffIEF/self.TAA.IEFp), (self.TAA.IEFp*0.99))
+                    diffIEF/self.TAA.IEFp), (self.TAA.IEFp*0.995))
 
-        targetHYG = kellerAllocation*kellerHYG
+        targetHYG = (kellerAllocation*kellerHYG)
         diffHYG = targetHYG - (self.TAA.HYG*self.TAA.HYGp)
         print("HYG diff is ", diffHYG)
-        if(abs(diffHYG) >= self.TAA.HYGp and self.TAA.HYGp != 0 and abs(diffHYG) > 100):
+        if(abs(diffHYG) >= self.TAA.HYGp and self.TAA.HYGp != 0 and abs(diffHYG) > tradeThreshold):
             print("HYG diff is ", diffHYG, "going to do trade with ",
                   (round(diffHYG/self.TAA.HYGp)*self.TAA.HYGp))
-            if(diffHYG > 0):
+            if(diffHYG > 0  ):
                 self.adaptive_order_buy(TYCoContracts.USHYGAtSmart(),  round(
-                    diffHYG/self.TAA.HYGp), (self.TAA.HYGp*1.01))
+                    diffHYG/self.TAA.HYGp), (self.TAA.HYGp*1.005))
             else:
                 self.adaptive_order_sell(TYCoContracts.USHYGAtSmart(),  round(
-                    diffHYG/self.TAA.HYGp), (self.TAA.HYGp*0.99))
+                    diffHYG/self.TAA.HYGp), (self.TAA.HYGp*0.995))
 
-        targetGLD = (StokenAllocation*StokenGLD) + (RDAWGLD*RDAWAllocation)
+        targetGLD = (StokenAllocation*StokenGLD) + (RDAWGLD*RDAWAllocation) + (AAAAllocation*AAAGLD)
         diffGLD = targetGLD - (self.TAA.GLD*self.TAA.GLDp)
         print("GLD diff is ", diffGLD)
-        if(abs(diffGLD) >= self.TAA.GLDp and self.TAA.GLDp != 0 and abs(diffGLD) > 100):
+        if(abs(diffGLD) >= self.TAA.GLDp and self.TAA.GLDp != 0 and abs(diffGLD) > tradeThreshold):
             print("GLD diff is ", diffGLD, "going to do trade with ",
                   (round(diffGLD/self.TAA.GLDp)*self.TAA.GLDp))
-            if(diffGLD > 0):
+            if(diffGLD > 0  ):
                 self.market_order_buy(TYCoContracts.USGLDAtSmart(),  round(
-                    diffGLD/self.TAA.GLDp), (self.TAA.GLDp*1.01))
+                    diffGLD/self.TAA.GLDp), (self.TAA.GLDp*1.005))
             else:
                 self.market_order_sell(TYCoContracts.USGLDAtSmart(),  round(
-                    diffGLD/self.TAA.GLDp), (self.TAA.GLDp*0.99))
+                    diffGLD/self.TAA.GLDp), (self.TAA.GLDp*0.995))
 
         targetTLT = (StokenAllocation*StokenTLT) + \
-            (ADMAllocation*ADMTLT)+(RDAWAllocation*RDAWTLT)
+            (ADMAllocation*ADMTLT)+(RDAWAllocation*RDAWTLT) + (AAAAllocation*AAATLT)
         diffTLT = targetTLT - (self.TAA.TLT*self.TAA.TLTp)
         print("TLT diff is ", diffTLT)
-        if(abs(diffTLT) >= self.TAA.TLTp and self.TAA.TLTp != 0 and abs(diffTLT) > 100):
+        if(abs(diffTLT) >= self.TAA.TLTp and self.TAA.TLTp != 0 and abs(diffTLT) > tradeThreshold):
             print("TLT diff is ", diffTLT, "going to do trade with ",
                   (round(diffTLT/self.TAA.TLTp)*self.TAA.TLTp))
-            if(diffTLT > 0):
+            if(diffTLT > 0  ):
                 self.adaptive_order_buy(TYCoContracts.USTLTAtSmart(),  round(
-                    diffTLT/self.TAA.TLTp), (self.TAA.TLTp*1.01))
+                    diffTLT/self.TAA.TLTp), (self.TAA.TLTp*1.005))
             else:
                 self.adaptive_order_sell(TYCoContracts.USTLTAtSmart(),  round(
-                    diffTLT/self.TAA.TLTp), (self.TAA.TLTp*0.99))
+                    diffTLT/self.TAA.TLTp), (self.TAA.TLTp*0.995))
 
-        targetVNQ = StokenAllocation*StokenVNQ
+        targetVNQ = (StokenAllocation*StokenVNQ)+(AAAAllocation*AAAVNQ)
         diffVNQ = targetVNQ - (self.TAA.VNQ*self.TAA.VNQp)
         print("VNQ diff is ", diffVNQ)
-        if(abs(diffVNQ) >= self.TAA.VNQp and self.TAA.VNQp != 0 and abs(diffVNQ) > 100):
+        if(abs(diffVNQ) >= self.TAA.VNQp and self.TAA.VNQp != 0 and abs(diffVNQ) > tradeThreshold):
             print("VNQ diff is ", diffVNQ, "going to do trade with ",
                   (round(diffVNQ/self.TAA.VNQp)*self.TAA.VNQp))
-            if(diffVNQ > 0):
+            if(diffVNQ > 0  ):
                 self.adaptive_order_buy(TYCoContracts.USVNQAtSmart(),  round(
-                    diffVNQ/self.TAA.VNQp), (self.TAA.VNQp*1.01))
+                    diffVNQ/self.TAA.VNQp), (self.TAA.VNQp*1.005))
             else:
                 self.adaptive_order_sell(TYCoContracts.USVNQAtSmart(),  round(
-                    diffVNQ/self.TAA.VNQp), (self.TAA.VNQp*0.99))
+                    diffVNQ/self.TAA.VNQp), (self.TAA.VNQp*0.995))
 
-        targetVEU = GEMAllocation*GEMVEU
+        targetVEU = (GEMAllocation*GEMVEU)
         diffVEU = targetVEU - (self.TAA.VEU*self.TAA.VEUp)
         print("VEU diff is ", diffVEU)
-        if(abs(diffVEU) >= self.TAA.VEUp and self.TAA.VEUp != 0 and abs(diffVEU) > 100):
+        if(abs(diffVEU) >= self.TAA.VEUp and self.TAA.VEUp != 0 and abs(diffVEU) > tradeThreshold):
             print("VEU diff is ", diffVEU, "going to do trade with ",
                   (round(diffVEU/self.TAA.VEUp)*self.TAA.VEUp))
-            if(diffVEU > 0):
+            if(diffVEU > 0  ):
                 self.adaptive_order_buy(TYCoContracts.USVEUAtSmart(),  round(
-                    diffVEU/self.TAA.VEUp), (self.TAA.VEUp*1.01))
+                    diffVEU/self.TAA.VEUp), (self.TAA.VEUp*1.005))
             else:
                 self.adaptive_order_sell(TYCoContracts.USVEUAtSmart(),  round(
-                    diffVEU/self.TAA.VEUp), (self.TAA.VEUp*0.99))
+                    diffVEU/self.TAA.VEUp), (self.TAA.VEUp*0.995))
 
-        targetBND = GEMAllocation*GEMBND
+        targetVEA = (VAAAllocation*VAAVEA)
+        diffVEA = targetVEA - (self.TAA.VEA*self.TAA.VEAp)
+        print("VEA diff is ", diffVEA)
+        if(abs(diffVEA) >= self.TAA.VEAp and self.TAA.VEAp != 0 and abs(diffVEA) > tradeThreshold):
+            print("VEA diff is ", diffVEA, "going to do trade with ",
+                  (round(diffVEA/self.TAA.VEAp)*self.TAA.VEAp))
+            if(diffVEA > 0  ):
+                self.adaptive_order_buy(TYCoContracts.USVEAAtSmart(),  round(
+                    diffVEA/self.TAA.VEAp), (self.TAA.VEAp*1.005))
+            else:
+                self.adaptive_order_sell(TYCoContracts.USVEAAtSmart(),  round(
+                    diffVEA/self.TAA.VEAp), (self.TAA.VEAp*0.995))
+
+        targetVWO = (VAAAllocation*VAAVWO)
+        diffVWO = targetVWO - (self.TAA.VWO*self.TAA.VWOp)
+        print("VWO diff is ", diffVWO)
+        if(abs(diffVWO) >= self.TAA.VWOp and self.TAA.VWOp != 0 and abs(diffVWO) > tradeThreshold):
+            print("VWO diff is ", diffVWO, "going to do trade with ",
+                  (round(diffVWO/self.TAA.VWOp)*self.TAA.VWOp))
+            if(diffVWO > 0  ):
+                self.adaptive_order_buy(TYCoContracts.USVWOAtSmart(),  round(
+                    diffVWO/self.TAA.VWOp), (self.TAA.VWOp*1.005))
+            else:
+                self.adaptive_order_sell(TYCoContracts.USVWOAtSmart(),  round(
+                    diffVWO/self.TAA.VWOp), (self.TAA.VWOp*0.995))
+
+        targetSHY = (VAAAllocation*VAASHY)
+        diffSHY = targetSHY - (self.TAA.SHY*self.TAA.SHYp)
+        print("SHY diff is ", diffSHY)
+        if(abs(diffSHY) >= self.TAA.SHYp and self.TAA.SHYp != 0 and abs(diffSHY) > tradeThreshold):
+            print("SHY diff is ", diffSHY, "going to do trade with ",
+                  (round(diffSHY/self.TAA.SHYp)*self.TAA.SHYp))
+            if(diffSHY > 0  ):
+                self.adaptive_order_buy(TYCoContracts.USSHYAtSmart(),  round(
+                    diffSHY/self.TAA.SHYp), (self.TAA.SHYp*1.005))
+            else:
+                self.adaptive_order_sell(TYCoContracts.USSHYAtSmart(),  round(
+                    diffSHY/self.TAA.SHYp), (self.TAA.SHYp*0.995))
+
+        targetLQD = (VAAAllocation*VAALQD)
+        diffLQD = targetLQD - (self.TAA.LQD*self.TAA.LQDp)
+        print("LQD diff is ", diffLQD)
+        if(abs(diffLQD) >= self.TAA.LQDp and self.TAA.LQDp != 0 and abs(diffLQD) > tradeThreshold):
+            print("LQD diff is ", diffLQD, "going to do trade with ",
+                  (round(diffLQD/self.TAA.LQDp)*self.TAA.LQDp))
+            if(diffLQD > 0  ):
+                self.adaptive_order_buy(TYCoContracts.USLQDAtSmart(),  round(
+                    diffLQD/self.TAA.LQDp), (self.TAA.LQDp*1.005))
+            else:
+                self.adaptive_order_sell(TYCoContracts.USLQDAtSmart(),  round(
+                    diffLQD/self.TAA.LQDp), (self.TAA.LQDp*0.995))
+
+
+
+        targetBND = (GEMAllocation*GEMBND) + (VAAAllocation*VAAVOO)
         diffBND = targetBND - (self.TAA.BND*self.TAA.BNDp)
         print("BND diff is ", diffBND)
-        if(abs(diffBND) >= self.TAA.BNDp and self.TAA.BNDp != 0 and abs(diffBND) > 100):
+        if(abs(diffBND) >= self.TAA.BNDp and self.TAA.BNDp != 0 and abs(diffBND) > tradeThreshold):
             print("BND diff is ", diffBND, "going to do trade with ",
                   (round(diffBND/self.TAA.BNDp)*self.TAA.BNDp))
-            if(diffBND > 0):
+            if(diffBND > 0  ):
                 self.adaptive_order_buy(TYCoContracts.USBNDAtSmart(),  round(
-                    diffBND/self.TAA.BNDp), (self.TAA.BNDp*1.01))
+                    diffBND/self.TAA.BNDp), (self.TAA.BNDp*1.005))
             else:
                 self.adaptive_order_sell(TYCoContracts.USBNDAtSmart(),  round(
-                    diffBND/self.TAA.BNDp), (self.TAA.BNDp*0.99))
+                    diffBND/self.TAA.BNDp), (self.TAA.BNDp*0.995))
 
-        targetSCZ = ADMAllocation*ADMSCZ
+        targetSCZ = (ADMAllocation*ADMSCZ)
         diffSCZ = targetSCZ - (self.TAA.SCZ*self.TAA.SCZp)
         print("SCZ diff is ", diffSCZ)
-        if(abs(diffSCZ) >= self.TAA.SCZp and self.TAA.SCZp != 0 and abs(diffSCZ) > 100):
+        if(abs(diffSCZ) >= self.TAA.SCZp and self.TAA.SCZp != 0 and abs(diffSCZ) > tradeThreshold):
             print("SCZ diff is ", diffSCZ, "going to do trade with ",
                   (round(diffSCZ/self.TAA.SCZp)*self.TAA.SCZp))
-            if(diffSCZ > 0):
+            if(diffSCZ > 0  ):
                 self.adaptive_order_buy(TYCoContracts.USSCZAtSmart(),  round(
-                    diffSCZ/self.TAA.SCZp), (self.TAA.SCZp*1.01))
+                    diffSCZ/self.TAA.SCZp), (self.TAA.SCZp*1.005))
             else:
                 self.adaptive_order_sell(TYCoContracts.USSCZAtSmart(),  round(
-                    diffSCZ/self.TAA.SCZp), (self.TAA.SCZp*0.99))
+                    diffSCZ/self.TAA.SCZp), (self.TAA.SCZp*0.995))
 
-        targetDBC = RDAWAllocation*RDAWDBC
+        targetDBC = (RDAWAllocation*RDAWDBC)+(AAAAllocation*AAADBC)
         diffDBC = targetDBC - (self.TAA.DBC*self.TAA.DBCp)
         print("DBC diff is ", diffDBC)
-        if(abs(diffDBC) >= self.TAA.DBCp and self.TAA.DBCp != 0 and abs(diffDBC) > 100):
+        if(abs(diffDBC) >= self.TAA.DBCp and self.TAA.DBCp != 0 and abs(diffDBC) > tradeThreshold):
             print("DBC diff is ", diffDBC, "going to do trade with ",
                   (round(diffDBC/self.TAA.DBCp)*self.TAA.DBCp))
-            if(diffDBC > 0):
+            if(diffDBC > 0  ):
                 self.adaptive_order_buy(TYCoContracts.USDBCAtSmart(),  round(
-                    diffDBC/self.TAA.DBCp), (self.TAA.DBCp*1.01))
+                    diffDBC/self.TAA.DBCp), (self.TAA.DBCp*1.005))
             else:
                 self.adaptive_order_sell(TYCoContracts.USDBCAtSmart(),  round(
-                    diffDBC/self.TAA.DBCp), (self.TAA.DBCp*0.99))
+                    diffDBC/self.TAA.DBCp), (self.TAA.DBCp*0.995))
 
     def orderOperations_cancel(self):
         if self.simplePlaceOid is not None:
@@ -1026,6 +1274,11 @@ def main():
     cmdLineParser.add_argument("-C", "--global-cancel", action="store_true",
                                dest="global_cancel", default=False,
                                help="whether to trigger a globalCancel req")
+    cmdLineParser.add_argument("-manual", nargs='?', default='0', help='whether to update price manually')
+    cmdLineParser.add_argument("-price", nargs='?', default='0', help='0 to choose end of month price; 1 to choose average price of a month')
+    cmdLineParser.add_argument("-real", nargs='?', default='0', help='1 to conduct real trade; 0 to see calculation result ')
+    cmdLineParser.add_argument("-cash", nargs='?', default='0', help='1 to use cash for crash protection; 0 to use default asset ')
+
     args = cmdLineParser.parse_args()
     print("Using args", args)
     logging.debug("Using args %s", args)
@@ -1061,6 +1314,11 @@ def main():
         if args.global_cancel:
             app.globalCancelOnly = True
         # ! [connect]
+        app.manual_update = args.manual
+        app.price_method = args.price
+        app.real_trade = args.real
+        app.cash_overwrite = args.cash
+
         app.connect("127.0.0.1", args.port, clientId=0)
         # ! [connect]
         print("serverVersion:%s connectionTime:%s" % (app.serverVersion(),
