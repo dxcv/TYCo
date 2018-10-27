@@ -65,7 +65,7 @@ Or manually update strategy's distribution by modifing following values in TAA.p
 
 
 
-2. 
+3. 
 *Execute following for seeing the calculation result
 
 python3 TAA.py -real 0
@@ -78,5 +78,8 @@ python3 TAA.py -real 1
 
 python3 TAA.py -real 1 -cash 1 
 
+
+P.S.
+For actual trading account, you need to specify port number with option "-p"
 
 
