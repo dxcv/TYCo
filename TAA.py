@@ -839,7 +839,7 @@ class TestApp(TestWrapper, TestClient):
         print ('\n')
         print ("manual update is ", self.manual_update)
         print ("price method is ", self.price_method)
-        print ("read trade is ", self.real_trade)
+        print ("real trade is ", self.real_trade)
         print ("cash overwrite is ", self.cash_overwrite)
         '''
         # We could overwrite parameters here
