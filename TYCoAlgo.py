@@ -144,7 +144,7 @@ def get_stock_data(stock):
     return stock
 
 def get_12_month_close_price(ticker):
-    start = datetime.today() - timedelta(days=365)
+    start = datetime.today() - timedelta(days=396)
     start = start.replace(day=1)
     end = datetime.today()
     #print (" data start at ", start)
@@ -155,13 +155,23 @@ def get_12_month_close_price(ticker):
     return close
 
 def get_12_month_price_average(close):
+    today = datetime.today()
     monthAverage = close.resample('M').mean()
+    if ( today.day > 13 ):
+        monthAverage = monthAverage.iloc[1:]
+    #print (monthAverage)
     return monthAverage
 
 def get_12_month_price_endofmonth(close):
-    start = date.today() - timedelta(days=365)
-    start = start.replace(day=1)
-    eom = pd.date_range(start, periods=13 , freq='BM')
+    today = date.today()
+    if ( today.day < 15 ):
+        start = date.today() - timedelta(days=396)
+        start = start.replace(day=1)
+        eom = pd.date_range(start, periods=14 , freq='BM')
+    else:
+        start = date.today() - timedelta(days=365)
+        start = start.replace(day=1)
+        eom = pd.date_range(start, periods=13 , freq='BM')
     #print (eom)
     monthly = close
     monthly = monthly.reindex(eom)
@@ -181,6 +191,10 @@ def get_12_month_price_endofmonth(close):
         else:
             #print( idx, " value is not NaN ", monthly.loc[idx] )
             pass
+    if ( today.day < 15 ):
+        #print ('\n',"Today is before 15th of this month.")
+        #print ( "Use today's price as the price of previous month's end price")
+        monthly[12] = monthly[13]
     #print ('\n',"End of month price")
     #print (monthly)
     #print ('\n')        
