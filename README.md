@@ -11,12 +11,15 @@ Note:
 
 * This is modified from Interactive Brokers sample code.
 * Code is not pretty but workable.
-* Use VOO to replace SPY for lower expense ratio.
-* Suggest to test with paper trading account first.
-* GLD doesn't support IB algo order, so here it use Market order.
-* Please be be cautious when using auto calculated distribution for VAA, ADM, AAA, and GEM.
+* Use VOO to replace SPY for the lower expense ratio.
+* Suggest testing with a paper trading account first.
+* GLD doesn't support IB algo order, so here it uses Market order.
+* Please be cautious when using auto calculated distribution for VAA, ADM, AAA, and GEM.
 * Adaptive Asset Allocation's calculation accuracy is limited due to using scipy.optimize with Python 
-* End of month price is easy to be affected by short term volatility. So it also show calculation result with month average price for reference.
+* End of month price is easy to be affected by short-term volatility. So it also shows the calculation result with the monthly average price for reference.
+* When executing before 15th of the month, it will use the price closest to today as the end price of last month. 
+  If you execute after 15th, it will use price closest to today as the end price of this month. 
+* For the monthly average price, it will always try to average the current month's price regardless of the date unless there is no price available for the current month.  
 
 Usage:
 
