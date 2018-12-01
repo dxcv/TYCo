@@ -279,12 +279,12 @@ def get_VAA_allocations(method='0'):
 
     if method == '0' :
         print( '\n'" Choose end of month price to calculate 13612W ")
-        RiskonG4 = [ ReturnList( "VOO" , VOO13612Wa ) , ReturnList( "VEA" , VEA13612Wa ) ,ReturnList( "VWO" , VWO13612Wa ) ,ReturnList( "BND" , BND13612Wa ) ]
-        Riskoff = [ ReturnList( "SHY" , SHY13612Wa ) , ReturnList( "IEF" , IEF13612Wa ) ,ReturnList( "LQD" , LQD13612Wa ) ]
-    elif method == '1' :
-        print( '\n'" Choose month's month average price to calculate 13612W ")
         RiskonG4 = [ ReturnList( "VOO" , VOO13612We ) , ReturnList( "VEA" , VEA13612We ) ,ReturnList( "VWO" , VWO13612We ) ,ReturnList( "BND" , BND13612We ) ]
         Riskoff = [ ReturnList( "SHY" , SHY13612We ) , ReturnList( "IEF" , IEF13612We ) ,ReturnList( "LQD" , LQD13612We ) ]
+    elif method == '1' :
+        print( '\n'" Choose month's month average price to calculate 13612W ")
+        RiskonG4 = [ ReturnList( "VOO" , VOO13612Wa ) , ReturnList( "VEA" , VEA13612Wa ) ,ReturnList( "VWO" , VWO13612Wa ) ,ReturnList( "BND" , BND13612Wa ) ]
+        Riskoff = [ ReturnList( "SHY" , SHY13612Wa ) , ReturnList( "IEF" , IEF13612Wa ) ,ReturnList( "LQD" , LQD13612Wa ) ]
 
     VAAVOO = 0
     VAAVEA = 0
