@@ -1190,7 +1190,7 @@ class TestApp(TestWrapper, TestClient):
 
 
 
-        targetBND = (GEMAllocation*GEMBND) + (VAAAllocation*VAAVOO)
+        targetBND = (GEMAllocation*GEMBND) + (VAAAllocation*VAABND)
         diffBND = targetBND - (self.TAA.BND*self.TAA.BNDp)
         print("BND diff is ", diffBND)
         if(abs(diffBND) >= self.TAA.BNDp and self.TAA.BNDp != 0 and abs(diffBND) > tradeThreshold):
