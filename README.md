@@ -1,5 +1,9 @@
 # TY&Co.
 
+# Gap between 3-month and 10-year U.S. yields vanishes Friday (March 22, 2019)
+The gap between the three-month and 10-year yields vanished as a surge of buying pushed the latter to a 14-month low of 2.416 percent. Inversion is considered a reliable harbinger of recession in the U.S., within roughly the next 18 months.
+https://www.bloomberg.com/news/articles/2019-03-22/u-s-treasury-yield-curve-inverts-for-first-time-since-2007?fbclid=IwAR3hW-milqCV9K-FuJY8GomPTjkmk9L0Eq6Hh2-BqxRValKrXlznpvHlEKY
+
 Python code for executing Tactical asset allocation on Interactive Brokers
 
 *Disclaimer
