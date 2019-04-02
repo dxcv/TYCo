@@ -256,6 +256,7 @@ class TestApp(TestWrapper, TestClient):
         self.price_method = 0
         self.real_trade = 0
         self.cash_overwrite = 0
+        self.top_accests = 1
         self.TAA = TAA_struct()
 
     def dumpTestCoverageSituation(self):
@@ -848,7 +849,7 @@ class TestApp(TestWrapper, TestClient):
         self.real_trade='0'
         self.cash_overwrite='0'
         '''
-        tradeThreshold = 100
+        tradeThreshold = 666
         # Keller and Butler’s Vigilant Asset Allocation – G4 (VAA)
         VAAAllocation = 0
         if ( self.manual_update == '1' ):
@@ -860,7 +861,7 @@ class TestApp(TestWrapper, TestClient):
             VAAIEF = 0
             VAALQD = 0
         else:
-            VAA = TYCoAlgo.get_VAA_allocations(self.price_method)
+            VAA = TYCoAlgo.get_VAA_allocations(self.price_method, self.top_assets)
             VAAVOO = VAA[0]
             VAAVEA = VAA[1]
             VAAVWO = VAA[2]
@@ -1278,6 +1279,7 @@ def main():
     cmdLineParser.add_argument("-price", nargs='?', default='0', help='0 to choose end of month price; 1 to choose average price of a month')
     cmdLineParser.add_argument("-real", nargs='?', default='0', help='1 to conduct real trade; 0 to see calculation result ')
     cmdLineParser.add_argument("-cash", nargs='?', default='0', help='1 to use cash for crash protection; 0 to use default asset ')
+    cmdLineParser.add_argument("-T", "--top", action="store", type=int,  dest="top", default=1, help="Choose the number of top assets to trade")
 
     args = cmdLineParser.parse_args()
     print("Using args", args)
@@ -1318,6 +1320,7 @@ def main():
         app.price_method = args.price
         app.real_trade = args.real
         app.cash_overwrite = args.cash
+        app.top_assets = args.top
 
         app.connect("127.0.0.1", args.port, clientId=0)
         # ! [connect]

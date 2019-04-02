@@ -24,6 +24,7 @@ Note:
 * When executing before 15th of the month, it will use the price closest to today as the end price of last month. 
   If you execute after 15th, it will use price closest to today as the end price of this month. 
 * For the monthly average price, it will always try to average the current month's price regardless of the date unless there is no price available for the current month.  
+* Add one option T which allow you to diverified allocation for VAA during turbulent time. 
 
 Usage:
 

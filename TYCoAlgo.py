@@ -216,8 +216,11 @@ def getWR(Riskon):
     return Riskon.WR
 
 
-def get_VAA_allocations(method='0'):
-    # Keller and Butler’s Vigilant Asset Allocation – G4
+def get_VAA_allocations(method='0',T='1'):
+    # Keller and Butler’s Vigilant Asset Allocation – G4 
+    # The paper recommend G4 to use (T/B=1/1)
+    # B : breadth protection threshold  
+    # T : the number of best performing assets to buy
     global VOOph
     global VEAph
     global VWOph
@@ -300,14 +303,44 @@ def get_VAA_allocations(method='0'):
         for i in RiskonG4:
             print ( i.ticker, " Weight Return is ", i.WR )
 
-        if( RiskonG4[0].ticker == "VOO" ):
-            VAAVOO = 1
-        elif (RiskonG4[0].ticker == "VEA" ):
-            VAAVEA = 1
-        elif (RiskonG4[0].ticker == "VWO" ):
-            VAAVWO = 1
-        elif (RiskonG4[0].ticker == "BND" ):
-            VAABND = 1     
+        if( T > 4 ):
+            print( '\n',"Error : Incorrect T number.") 
+        else:
+            print( '\n',"T = ", T,"   It will trade top ",T," assets.") 
+        
+        if( T == 1 ):
+            if( RiskonG4[0].ticker == "VOO" ):
+                VAAVOO = 1
+            elif (RiskonG4[0].ticker == "VEA" ):
+                VAAVEA = 1
+            elif (RiskonG4[0].ticker == "VWO" ):
+                VAAVWO = 1
+            elif (RiskonG4[0].ticker == "BND" ):
+                VAABND = 1
+        elif( T == 2 ):
+            if( RiskonG4[0].ticker == "VOO" or RiskonG4[1].ticker == "VOO" ):
+                VAAVOO = 0.5
+            if (RiskonG4[0].ticker == "VEA" or  RiskonG4[1].ticker == "VEA"):
+                VAAVEA = 0.5
+            if ( RiskonG4[0].ticker == "VWO" or RiskonG4[1].ticker == "VWO" ):
+                VAAVWO = 0.5
+            if (RiskonG4[0].ticker == "BND" or RiskonG4[1].ticker == "BND" ):
+                VAABND = 0.5
+        elif( T == 3 ):
+            if( RiskonG4[0].ticker == "VOO" or RiskonG4[1].ticker == "VOO" or RiskonG4[2].ticker == "VOO" ):
+                VAAVOO = 0.333
+            if (RiskonG4[0].ticker == "VEA" or  RiskonG4[1].ticker == "VEA" or  RiskonG4[2].ticker == "VEA"):
+                VAAVEA = 0.333
+            if ( RiskonG4[0].ticker == "VWO" or RiskonG4[1].ticker == "VWO" or RiskonG4[2].ticker == "VWO" ):
+                VAAVWO = 0.333
+            if (RiskonG4[0].ticker == "BND" or RiskonG4[1].ticker == "BND" or RiskonG4[2].ticker == "BND" ):
+                VAABND = 0.333
+        elif( T == 4 ):
+                VAAVOO = 0.25
+                VAAVEA = 0.25
+                VAAVWO = 0.25
+                VAABND = 0.25
+
     else:
         print ( '\n'," Makret is risky for VAA.  Try Rick off asset ",'\n')
         Riskoff = sorted( Riskoff , key=getWR , reverse = True )
@@ -321,6 +354,7 @@ def get_VAA_allocations(method='0'):
                 VAAIEF = 1
             elif (Riskoff[0].ticker == "LQD" ):
                 VAALQD = 1  
+
     print ( '\n'," Allocation for VAA is ", " VOO ", VAAVOO," VEA ",VAAVEA," VWO ",VAAVWO," BND ",VAABND," SHY ",VAASHY," IEF ",VAAIEF," LQD ",VAALQD, '\n' )
     return VAAVOO,VAAVEA,VAAVWO,VAABND,VAASHY,VAAIEF,VAALQD
 
