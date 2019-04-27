@@ -49,9 +49,6 @@ Decide the each strategy's allocation value in TAA.py
         # Keller and Butler’s Elastic Asset Allocation – Defensive
         kellerAllocation = 0   
 
-        # Dick Stoken’s Active Combined Asset (ACA)
-        StokenAllocation = 0
-
 
 2.
 Decide each strategy's distribution in TAA.py 
